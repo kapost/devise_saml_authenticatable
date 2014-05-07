@@ -42,6 +42,14 @@ module Devise
 	          resource = new
             set_user_saml_attributes(resource,attributes)
             resource.save!
+
+            n = Newsroom.by_sub('kapostmarketing')
+            n.add_member(resource)
+          end
+
+          if resource.identity_provider != 'kapost-idp'
+            logger.info("User(#{attributes[inv_attr[key.to_s]]}) was not created with current idp. Not allowed.")
+            return nil
           end
 
           resource
@@ -62,6 +70,13 @@ module Devise
             Rails.logger.info "Setting: #{v}, #{attributes[k]}"
             user.send "#{v}=", attributes[k]
           end
+
+          #TODO: dont do this
+          user.password = 'f00b@r'
+          user.identity_provider = 'kapost-idp'
+          user.skip_confirmation!
+
+
         end
       end
     end

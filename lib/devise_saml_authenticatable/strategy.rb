@@ -7,8 +7,17 @@ module Devise
         params[:SAMLResponse]
       end
       def authenticate!
-        @response = Onelogin::Saml::Response.new(params[:SAMLResponse])
-	      @response.settings = get_saml_config
+        @response = OneLogin::RubySaml::Response.new(params[:SAMLResponse])
+
+        settings = get_saml_config
+
+        sub = Subdomain.first(request)
+        umbrella = Newsroom.find_by(:subdomain => sub)
+
+        settings.idp_sso_target_url = umbrella.saml_issuer_url
+        settings.idp_cert = umbrella.secret_sso_x509_cert.decrypt
+
+        @response.settings = settings
 	      resource = mapping.to.authenticate_with_saml(@response.attributes)
         if @response.is_valid?
           success!(resource)
